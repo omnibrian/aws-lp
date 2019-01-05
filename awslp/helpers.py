@@ -20,7 +20,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def should_verify(lastpass_server):
-    """ Disable SSL validation only when debugging via proxy """
+    """Disable SSL validation only when debugging via proxy"""
     return LASTPASS_SERVER in lastpass_server
 
 
@@ -85,7 +85,8 @@ def lastpass_login_hash(username, password, iterations):
 def lastpass_iterations(session, lastpass_server, username):
     """Determine the number of PBKDF2 iterations needed for a user."""
     iterations = 5000
-    lp_iterations_page = f'{lastpass_server}/iterations.php'
+    lp_iterations_page = '{lastpass_server}/iterations.php' \
+        .format(lastpass_server=lastpass_server)
 
     params = {
         'email': username
@@ -105,7 +106,8 @@ def lastpass_login(session, lastpass_server, username, password, otp=None):
     LOGGER.debug('logging into lastpass as %s', username)
     iterations = lastpass_iterations(session, lastpass_server, username)
 
-    lp_login_page = f'{lastpass_server}/login.php'
+    lp_login_page = '{lastpass_server}/login.php' \
+        .format(lastpass_server=lastpass_server)
 
     params = {
         'method': 'web',
@@ -131,7 +133,8 @@ def lastpass_login(session, lastpass_server, username, password, otp=None):
             raise MfaRequiredException('Need MFA for this login')
         else:
             reason = error.get('message')
-            raise ValueError(f'Could not login to lastpass: {reason}')
+            raise ValueError('Could not login to lastpass: {reason}'
+                             .format(reason=reason))
 
 
 def get_saml_token(session, lastpass_server, saml_cfg_id):
@@ -142,7 +145,8 @@ def get_saml_token(session, lastpass_server, saml_cfg_id):
     LOGGER.debug('Getting SAML token')
 
     # now logged in, grab the SAML token from the IdP-initiated login
-    idp_login = f'{lastpass_server}/saml/launch/cfg/{saml_cfg_id}'
+    idp_login = '{lastpass_server}/saml/launch/cfg/{saml_cfg_id}' \
+        .format(lastpass_server=lastpass_server, saml_cfg_id=saml_cfg_id)
 
     response = session.get(idp_login, verify=should_verify(lastpass_server))
 
@@ -174,7 +178,8 @@ def get_saml_aws_roles(assertion):
     doc = ElementTree.fromstring(assertion)
 
     role_attrib = 'https://aws.amazon.com/SAML/Attributes/Role'
-    xpath = f".//saml:Attribute[@Name='{role_attrib}']/saml:AttributeValue"
+    xpath = ".//saml:Attribute[@Name='{role_attrib}']/saml:AttributeValue" \
+        .format(role_attrib=role_attrib)
 
     namespace = {
         'saml': 'urn:oasis:names:tc:SAML:2.0:assertion'
@@ -207,7 +212,7 @@ def prompt_for_role(roles):
     count = 1
 
     for role in roles:
-        print(f'  {count}) {role[0]}')
+        print('  {count}) {role}'.format(count=count, role=role[0]))
         count = count + 1
 
     choice = 0
