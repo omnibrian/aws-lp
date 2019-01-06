@@ -9,11 +9,11 @@ import struct
 from xml.etree import ElementTree
 
 import boto3
-from six.moves import input
+from six import binary_type
 from six.moves import html_parser
+from six.moves import input
 
 from awslp.exceptions import MfaRequiredException
-
 
 LASTPASS_SERVER = 'https://lastpass.com'
 LOGGER = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def extract_form(html):
 
 def xorbytes(string_a, string_b):
     """XOR all bytes in a string"""
-    return ''.join(map(lambda x, y: chr(ord(x) ^ ord(y)), string_a, string_b))
+    return ''.join([chr(ord(x) ^ ord(y)) for (x, y) in zip(string_a, string_b)])
 
 
 def prf(hsh, data):
@@ -63,8 +63,11 @@ def pbkdf2(password, salt, rounds, length):
     key = ''
     hsh = hmac.new(password, None, hashlib.sha256)
 
-    for block in range(0, (length + 31) / 32):
-        index = hval = prf(hsh, salt + struct.pack('>I', block + 1))
+    for block in range(0, int((length + 31) / 32)):
+        index = hval = prf(
+            hsh,
+            binary_type(salt, 'utf-8') + struct.pack('>I', block + 1)
+        )
 
         for _ in range(1, rounds):
             hval = prf(hsh, hval)

@@ -3,7 +3,10 @@
 # argument to specify the text encoding
 from io import open
 from os import path
+
 from setuptools import setup, find_packages
+
+from awslp import __version__
 
 # get the long description from the readme
 with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'),
@@ -12,7 +15,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'),
 
 setup(
     name='aws-lp',
-    version='0.1',
+    version=__version__,
     description='Tool for using AWS CLI with LastPass SAML',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
@@ -25,6 +28,8 @@ setup(
     install_requires=[
         'awscli',
         'boto3',
+        'click',
+        'requests',
         'six',
     ],
     entry_points={
