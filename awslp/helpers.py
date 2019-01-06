@@ -1,19 +1,17 @@
 """Shared helpers"""
 import base64
 import binascii
-import hashlib
-import hmac
 import logging
 import re
-import struct
 from xml.etree import ElementTree
 
 import boto3
-from six import binary_type
+from six import text_type
 from six.moves import html_parser
 from six.moves import input
 
 from awslp.exceptions import MfaRequiredException
+from awslp.pbkdf2 import pbkdf2
 
 LASTPASS_SERVER = 'https://lastpass.com'
 LOGGER = logging.getLogger(__name__)
@@ -46,41 +44,11 @@ def extract_form(html):
     }
 
 
-def xorbytes(string_a, string_b):
-    """XOR all bytes in a string"""
-    return ''.join([chr(ord(x) ^ ord(y)) for (x, y) in zip(string_a, string_b)])
-
-
-def prf(hsh, data):
-    """Internal hash update for pbkdf2/hmac-sha256"""
-    hshm = hsh.copy()
-    hshm.update(data)
-    return hshm.digest()
-
-
-def pbkdf2(password, salt, rounds, length):
-    """PBKDF2-SHA256 password derivation."""
-    key = ''
-    hsh = hmac.new(password, None, hashlib.sha256)
-
-    for block in range(0, int((length + 31) / 32)):
-        index = hval = prf(
-            hsh,
-            binary_type(salt, 'utf-8') + struct.pack('>I', block + 1)
-        )
-
-        for _ in range(1, rounds):
-            hval = prf(hsh, hval)
-            index = xorbytes(index, hval)
-
-        key = key + index
-
-    return binascii.hexlify(key[0:length])
-
-
 def lastpass_login_hash(username, password, iterations):
     """Determine the number of PBKDF2 iterations needed for a user."""
-    key = binascii.unhexlify(pbkdf2(password, username, iterations, 32))
+    pbkdf2_out = pbkdf2(password, username, iterations, 32)
+    print(pbkdf2_out)
+    key = binascii.unhexlify(pbkdf2_out)
     result = pbkdf2(key, password, 1, 32)
     return result
 
@@ -245,4 +213,4 @@ def aws_assume_role(assertion, role_arn, principal_arn):
     return client.assume_role_with_saml(
                 RoleArn=role_arn,
                 PrincipalArn=principal_arn,
-                SAMLAssertion=base64.b64encode(assertion))
+                SAMLAssertion=text_type(base64.b64encode(assertion)))
