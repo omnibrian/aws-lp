@@ -3,6 +3,7 @@ import base64
 import binascii
 import logging
 import re
+import sys
 from xml.etree import ElementTree
 
 import boto3
@@ -46,9 +47,7 @@ def extract_form(html):
 
 def lastpass_login_hash(username, password, iterations):
     """Determine the number of PBKDF2 iterations needed for a user."""
-    pbkdf2_out = pbkdf2(password, username, iterations, 32)
-    print(pbkdf2_out)
-    key = binascii.unhexlify(pbkdf2_out)
+    key = binascii.unhexlify(pbkdf2(password, username, iterations, 32))
     result = pbkdf2(key, password, 1, 32)
     return result
 
@@ -104,8 +103,8 @@ def lastpass_login(session, lastpass_server, username, password, otp=None):
             raise MfaRequiredException('Need MFA for this login')
         else:
             reason = error.get('message')
-            raise ValueError('Could not login to lastpass: {reason}'
-                             .format(reason=reason))
+            sys.exit('Could not login to lastpass: {reason}'
+                     .format(reason=reason))
 
 
 def get_saml_token(session, lastpass_server, saml_cfg_id):
@@ -129,6 +128,7 @@ def get_saml_token(session, lastpass_server, saml_cfg_id):
 
         for line in response.text.splitlines():
             match = re.search(r'<h2>(.*)</h2>', line)
+
             if match:
                 msg = html_parser.HTMLParser().unescape(match.group(1))
                 msg = msg.replace('<br/>', '\n')
@@ -136,9 +136,9 @@ def get_saml_token(session, lastpass_server, saml_cfg_id):
                 msg = msg.replace('</b>', '')
                 error = '\n' + msg
 
-        raise ValueError('Unable to find SAML ACS' + error)
+        sys.exit('[get_saml_token] Unable to find SAML ACS ' + error)
 
-    return base64.b64decode(form['fields']['SAMLResponse'])
+    return form['fields']['SAMLResponse']
 
 
 def get_saml_aws_roles(assertion):
@@ -146,7 +146,7 @@ def get_saml_aws_roles(assertion):
 
     This returns a list of RoleARN, PrincipalARN (IdP) pairs.
     """
-    doc = ElementTree.fromstring(assertion)
+    doc = ElementTree.fromstring(base64.b64decode(assertion))
 
     role_attrib = 'https://aws.amazon.com/SAML/Attributes/Role'
     xpath = ".//saml:Attribute[@Name='{role_attrib}']/saml:AttributeValue" \
@@ -165,7 +165,7 @@ def get_saml_nameid(assertion):
 
     This returns a list of nameids.
     """
-    doc = ElementTree.fromstring(assertion)
+    doc = ElementTree.fromstring(base64.b64decode(assertion))
 
     namespace = {
         'saml': 'urn:oasis:names:tc:SAML:2.0:assertion'
@@ -213,4 +213,4 @@ def aws_assume_role(assertion, role_arn, principal_arn):
     return client.assume_role_with_saml(
                 RoleArn=role_arn,
                 PrincipalArn=principal_arn,
-                SAMLAssertion=text_type(base64.b64encode(assertion)))
+                SAMLAssertion=text_type(assertion))
