@@ -8,8 +8,7 @@ from xml.etree import ElementTree
 
 import boto3
 from six import text_type
-from six.moves import html_parser
-from six.moves import input
+from six.moves import html_parser, input
 
 from awslp.exceptions import MfaRequiredException
 from awslp.pbkdf2 import pbkdf2

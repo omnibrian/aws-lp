@@ -6,7 +6,7 @@ from os import path
 
 from setuptools import setup, find_packages
 
-from awslp import __version__
+from awslp import __author__, __version__
 
 # get the long description from the readme
 with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'),
@@ -19,7 +19,7 @@ setup(
     description='Tool for using AWS CLI with LastPass SAML',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
-    author='Brian LeBlanc',
+    author=__author__,
     author_email='bleblan2@unb.ca',
     url='https://github.com/omnibrian/aws-lp',
     license='GPLv3',

@@ -5,7 +5,15 @@ import struct
 import sys
 from hashlib import sha256
 
-from six import binary_type, text_type
+from six import text_type
+
+
+def binary_type(string):
+    """Return binary_type of string."""
+    if sys.version_info[0] == 2:
+        return string
+
+    return string.encode('utf-8')
 
 
 def xorbytes(string_a, string_b):
@@ -26,11 +34,11 @@ def prf(hsh, data):
 
 def pbkdf2(password, salt, rounds, length):
     """PBKDF2-SHA256 password derivation."""
-    key = binary_type()
+    key = b''
     hash_object = hmac.new(password, None, sha256)
 
     if isinstance(salt, text_type):
-        salt = binary_type(salt, 'utf-8')
+        salt = binary_type(salt)
 
     for block in range(0, int((length + 31) / 32)):
         index = hash_value = prf(

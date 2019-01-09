@@ -6,12 +6,12 @@ from getpass import getpass
 
 import click
 import requests
-from six import binary_type
 
 from awslp import __version__
 from awslp.exceptions import MfaRequiredException
 from awslp.helpers import (get_saml_token, lastpass_login, prompt_for_role,
                            get_saml_aws_roles, aws_assume_role)
+from awslp.pbkdf2 import binary_type
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 @click.version_option(version=__version__)
 def main(username, saml_config_id, lastpass_server):
     """aws-lp cli"""
-    password = binary_type(getpass(), 'utf-8')
+    password = binary_type(getpass())
 
     session = requests.Session()
 
