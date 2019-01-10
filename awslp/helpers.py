@@ -1,4 +1,6 @@
 """Shared helpers"""
+from __future__ import print_function
+
 import base64
 import binascii
 import logging
@@ -210,6 +212,6 @@ def aws_assume_role(assertion, role_arn, principal_arn):
     client = boto3.client('sts')
 
     return client.assume_role_with_saml(
-                RoleArn=role_arn,
-                PrincipalArn=principal_arn,
-                SAMLAssertion=text_type(assertion))
+        RoleArn=role_arn,
+        PrincipalArn=principal_arn,
+        SAMLAssertion=text_type(assertion))
