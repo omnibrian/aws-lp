@@ -1,16 +1,14 @@
 """setuptools installation script"""
-# ensure open() defaults to text mode with universal newlines and accepts an
-# argument to specify the text encoding
-from io import open
+import io
 from os import path
 
 from setuptools import setup, find_packages
 
-from awslp import __author__, __version__
+from aws_lp import __author__, __version__
 
 # get the long description from the readme
-with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'),
-          encoding='utf-8') as readme:
+with io.open(path.join(path.abspath(path.dirname(__file__)), 'README.md'),
+             mode='rb') as readme:
     LONG_DESCRIPTION = readme.read()
 
 setup(
@@ -34,7 +32,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'aws-lp=awslp.main:main',
+            'aws-lp=aws_lp.main:main',
         ]
     }
 )

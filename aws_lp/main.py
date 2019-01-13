@@ -7,10 +7,10 @@ from getpass import getpass
 
 import click
 
-from awslp import __version__
-from awslp.lastpass import LastPassSession
-from awslp.utils import (aws_assume_role, binary_type, get_saml_aws_roles,
-                         prompt_for_role)
+from aws_lp import __version__
+from aws_lp.lastpass import LastPass
+from aws_lp.utils import (aws_assume_role, binary_type, get_saml_aws_roles,
+                          prompt_for_role)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ LOGGER = logging.getLogger(__name__)
 @click.version_option(version=__version__)
 def main(username, saml_config_id, lastpass_url):
     """aws-lp cli"""
-    lastpass_session = LastPassSession(lastpass_url)
+    lastpass_session = LastPass(lastpass_url)
     lastpass_session.login(username, binary_type(getpass()))
     assertion = lastpass_session.get_saml_token(saml_config_id)
 

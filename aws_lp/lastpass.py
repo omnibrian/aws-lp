@@ -13,7 +13,7 @@ from xml.etree import ElementTree
 import requests
 import six
 
-from awslp.utils import binary_type, xorbytes
+from aws_lp.utils import binary_type, xorbytes
 
 LOGGER = logging.getLogger(__name__)
 
@@ -22,8 +22,7 @@ class MfaRequiredException(Exception):
     """Exception for required MFA when none submitted."""
 
 
-# pylint: disable=useless-object-inheritance
-class LastPassSession(object):
+class LastPass(object):
     """LastPass Session management object."""
 
     def __init__(self, connection_url='https://lastpass.com'):
@@ -183,7 +182,7 @@ class LastPassSession(object):
             self.__login(username, password, mfa_token)
 
     def get_saml_token(self, saml_cfg_id):
-        """Log into LastPass and retrieve SAML token for given configuration."""
+        """Log into LastPass and retrieve SAML token for config."""
         LOGGER.debug('[get_saml_token] Starting SAML token retrieval')
 
         # once logged in, grab the SAML token from the IdP-initiated login

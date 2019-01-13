@@ -1,4 +1,6 @@
 """Static utility functions."""
+from __future__ import print_function
+
 import sys
 from xml.etree import ElementTree
 
