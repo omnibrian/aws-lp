@@ -23,7 +23,7 @@ class MfaRequiredException(Exception):
 
 
 class LastPass(object):
-    """LastPass Session management object."""
+    """LastPass Session management class."""
 
     def __init__(self, connection_url='https://lastpass.com'):
         self.lastpass_url = 'https://lastpass.com'
