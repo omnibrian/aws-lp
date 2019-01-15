@@ -6,9 +6,8 @@ from setuptools import setup, find_packages
 
 from aws_lp import __author__, __version__
 
-# get the long description from the readme
 with io.open(path.join(path.abspath(path.dirname(__file__)), 'README.md'),
-             mode='rb') as readme:
+             encoding='utf-8') as readme:
     LONG_DESCRIPTION = readme.read()
 
 setup(
