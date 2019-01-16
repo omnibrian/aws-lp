@@ -2,6 +2,8 @@
 import os
 import subprocess
 
+from aws_lp.utils import binary_type
+
 
 class Shell(object):
     """Shell Integration class."""
@@ -13,9 +15,9 @@ class Shell(object):
         """Update environment with new or updated variables."""
         self.env.update(kwargs)
 
-    def handoff(self, shell=os.environ['SHELL']):
-        """Handoff to shell process with defined environment"""
-        # TODO figure out how to load rc on subprocess start
-        # return subprocess.call(shell, shell=True, env=self.env,
-        #                        executable=shell)
-        return subprocess.call(shell, shell=True, env=self.env)
+    def handoff(self):
+        """Handoff to shell process with defined environment.
+
+        Currently only supports bash subprocesses with environment.
+        """
+        return subprocess.call('bash -i', env=self.env, executable='bash')
