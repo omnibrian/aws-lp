@@ -20,4 +20,13 @@ class Shell(object):
 
         Currently only supports bash subprocesses with environment.
         """
+        return self.handoff_bash()
+
+    def handoff_bash(self):
+        """Handoff to bash with defined environment."""
         return subprocess.call('bash -i', env=self.env, executable='bash')
+
+    def handoff_zsh(self):
+        """Handoff to zsh with defined environment."""
+        # TODO Figure out solution for having .zshrc loaded on start
+        return subprocess.call('zsh -i', env=self.env, executable='zsh')
