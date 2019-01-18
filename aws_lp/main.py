@@ -51,7 +51,12 @@ def main(username, saml_config_id, lastpass_url, verbose):
                      AWS_SESSION_TOKEN=credentials['SessionToken'])
 
     LOGGER.debug('Handing off to shell subprocess')
-    result = shell.handoff()
+
+    try:
+        result = shell.handoff(prompt_message=role[0].split('/')[-1])
+    except AttributeError:
+        result = shell.handoff()
+
     LOGGER.debug('Shell process finished with code %d', result)
 
     sys.exit(result)
