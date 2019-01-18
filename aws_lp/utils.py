@@ -2,6 +2,8 @@
 from __future__ import print_function
 
 import contextlib
+import io
+import os
 import shutil
 import sys
 import tempfile
@@ -90,14 +92,24 @@ def aws_assume_role(assertion, role_arn, principal_arn):
 
 
 @contextlib.contextmanager
-def tempdir():
+def tempdir(rcfile_location, rcfile_updates):
     """Create a temporary directory and clean up once done.
 
     Based on https://stackoverflow.com/a/33288373
     """
     dirpath = tempfile.mkdtemp()
 
+    rcfile_expanded_location = os.path.expanduser('~/' + rcfile_location)
+
     try:
+        with io.open(dirpath + '/' + rcfile_location, mode='w') as rc_temp:
+            if os.path.exists(rcfile_expanded_location):
+                with io.open(rcfile_expanded_location, mode='r') as rc_file:
+                    rc_temp.write(rc_file.read())
+
+            if rcfile_updates:
+                rc_temp.write(rcfile_updates)
+
         yield dirpath
     finally:
         shutil.rmtree(dirpath)

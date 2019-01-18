@@ -1,5 +1,4 @@
 """Shell Integration class."""
-import io
 import os
 import subprocess
 
@@ -16,26 +15,42 @@ class Shell(object):
         """Update environment with new or updated variables."""
         self.env.update(kwargs)
 
-    def handoff(self):
-        """Handoff to shell process with defined environment."""
+    def handoff(self, prompt_message=''):
+        """Handoff to shell process with defined environment.
+
+        Currently only supports bash and zsh with a default of bash.
+        """
         if 'zsh' in self.env.get('SHELL', 'bash'):
-            return self.handoff_zsh()
+            return self.handoff_zsh(prompt_message)
 
-        return self.handoff_bash()
+        return self.handoff_bash(prompt_message)
 
-    def handoff_bash(self):
+    def handoff_bash(self, prompt_message):
         """Handoff to bash with defined environment."""
-        return subprocess.call('bash -i', env=self.env, executable='bash')
+        if prompt_message:
+            bashrc_updates = \
+                '''
+                PS1="\\[\\e[\\33m\\]({prompt_message})\\[\\e[0m\\] $PS1"
+                '''.format(prompt_message=prompt_message)
+        else:
+            bashrc_updates = ''
 
-    def handoff_zsh(self):
+        with tempdir('.bashrc', bashrc_updates) as dirpath:
+            return subprocess.call('bash --rcfile ' + dirpath + '/.bashrc',
+                                   env=self.env, executable='bash')
+
+    def handoff_zsh(self, prompt_message):
         """Handoff to zsh with defined environment."""
-        with tempdir() as dirpath:
-            self.update_env(ZDOTDIR=dirpath)
-            zshrc_location = os.path.expanduser('~/.zshrc')
+        if prompt_message:
+            zshrc_updates = \
+                '''
+                setopt PROMPT_SUBST
+                PROMPT="%F{{yellow}}({prompt_message})%f $PROMPT"
+                '''.format(prompt_message=prompt_message)
+        else:
+            zshrc_updates = ''
 
-            if os.path.exists(zshrc_location):
-                with io.open(zshrc_location, mode='r') as zshrc, \
-                        io.open(dirpath + '/.zshrc', mode='w') as zshrc_temp:
-                    zshrc_temp.write(zshrc.read())
+        with tempdir('.zshrc', zshrc_updates) as dirpath:
+            self.update_env(ZDOTDIR=dirpath)
 
             return subprocess.call('zsh', env=self.env, executable='zsh')
