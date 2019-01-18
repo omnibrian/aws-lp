@@ -10,9 +10,9 @@ import click
 
 from aws_lp import __version__
 from aws_lp.lastpass import LastPass
+from aws_lp.shell import Shell
 from aws_lp.utils import (aws_assume_role, binary_type, get_saml_aws_roles,
                           prompt_for_role)
-from aws_lp.shell import Shell
 
 logging.basicConfig(
     format='[%(asctime)s][%(name)s][%(levelname)s]: %(message)s',

@@ -1,7 +1,10 @@
 """Static utility functions."""
 from __future__ import print_function
 
+import contextlib
+import shutil
 import sys
+import tempfile
 from xml.etree import ElementTree
 
 import boto3
@@ -84,3 +87,17 @@ def aws_assume_role(assertion, role_arn, principal_arn):
         RoleArn=role_arn,
         PrincipalArn=principal_arn,
         SAMLAssertion=six.text_type(assertion))
+
+
+@contextlib.contextmanager
+def tempdir():
+    """Create a temporary directory and clean up once done.
+
+    Based on https://stackoverflow.com/a/33288373
+    """
+    dirpath = tempfile.mkdtemp()
+
+    try:
+        yield dirpath
+    finally:
+        shutil.rmtree(dirpath)
