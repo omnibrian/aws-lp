@@ -4,6 +4,7 @@ from __future__ import print_function, unicode_literals
 import binascii
 import hashlib
 import hmac
+import json
 import logging
 import re
 import struct
@@ -210,7 +211,7 @@ class LastPass(object):
             sys.exit('Unable to find SAML ACS ' + error)
 
         if not form['fields'].get('SAMLResponse'):
-            print(form)
+            LOGGER.debug('[get_saml_token] Form: %s', json.dumps(form))
             sys.exit('No SAML response from LastPass')
 
         return form['fields']['SAMLResponse']
