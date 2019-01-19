@@ -3,20 +3,18 @@ from __future__ import print_function, unicode_literals
 
 import binascii
 import hashlib
-import hmac
 import json
 import logging
 import re
-import struct
 import sys
 from xml.etree import ElementTree
 
 import requests
 import six
 
-from aws_lp.exceptions import (LastPassIncorrectOtpError,
+from aws_lp.exceptions import (LastPassCredentialsError, LastPassUnknownError,
+                               LastPassIncorrectYubikeyPasswordError,
                                LastPassIncorrectGoogleAuthenticatorCodeError)
-from aws_lp.utils import binary_type, xorbytes
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,34 +68,6 @@ class LastPass(object):
             'fields': fields
         }
 
-    @staticmethod
-    def __prf(hash_, data):
-        """LastPass updated hash for pbkdf2/hmac-sha256."""
-        hash_copy = hash_.copy()
-        hash_copy.update(data)
-        return hash_copy.digest()
-
-    def __pbkdf2(self, password, salt, rounds, length):
-        """PBKDF2-SHA256 password derivation for LastPass."""
-        key = b''
-        hash_ = hmac.new(password, None, hashlib.sha256)
-
-        if isinstance(salt, six.text_type):
-            salt = binary_type(salt)
-
-        for block in range(0, int((length + 31) / 32)):
-            index = hash_value = self.__prf(
-                hash_,
-                salt + struct.pack('>I', block + 1))
-
-            for _ in range(1, rounds):
-                hash_value = self.__prf(hash_, hash_value)
-                index = xorbytes(index, hash_value)
-
-            key = key + index
-
-        return binascii.hexlify(key[0:length])
-
     def __get_iterations(self, username):
         """Determine the number of PBKDF2 iterations needed for user."""
         if self.__iterations_username == username:
@@ -121,65 +91,105 @@ class LastPass(object):
 
         return self.__iterations
 
-    def __login_hash(self, username, password):
+    @staticmethod
+    def __login_hash(username, password, iterations):
         """Determine the login hash for the user."""
-        iterations = self.__get_iterations(username)
         LOGGER.debug('[login_hash] Computing login hash for %s with %d '
                      'iterations', username, iterations)
 
-        key = binascii.unhexlify(
-            self.__pbkdf2(password, username, iterations, 32))
+        if iterations == 1:
+            key = binascii.hexlify(hashlib.sha256(username + password).digest())
 
-        return self.__pbkdf2(key, password, 1, 32)
+            return bytearray(hashlib.sha256(key + password).hexdigest(),
+                             'ascii')
 
-    def __login(self, username, password, otp=None):
-        """Log into LastPass with username and password."""
+        key = hashlib.pbkdf2_hmac('sha256', password, username, iterations, 32)
+
+        return binascii.hexlify(hashlib.pbkdf2_hmac('sha256', key, password, 1,
+                                                    32))
+
+    @staticmethod
+    def __parse_error(parsed_response):
+        """Extract error from parsed LastPass response."""
+        if parsed_response.tag != 'response':
+            error = None
+        else:
+            parsed_response.find('error')
+
+        if error is None or not error.attrib:
+            raise LastPassUnknownError('Unknown schema in response from '
+                                       'LastPass')
+
+        exceptions = {
+            'unknownemail': LastPassCredentialsError,
+            'unknownpassword': LastPassCredentialsError,
+            'googleauthrequired': LastPassIncorrectGoogleAuthenticatorCodeError,
+            'googleauthfailed': LastPassIncorrectGoogleAuthenticatorCodeError,
+            'yubikeyrestricted': LastPassIncorrectYubikeyPasswordError
+        }
+
+        cause = error.attrib.get('cause')
+        message = error.attrib.get('message')
+
+        if cause:
+            return exceptions.get(cause, LastPassUnknownError)(message or cause)
+
+        return LastPassUnknownError(message)
+
+    def login(self, username, password, otp=None, client_id=None):
+        """Log into LastPass with username, password, and optional OTP code.
+
+        If the user requires an OTP to login a LastPassIncorrectOtpError will be
+        raised.
+        """
         LOGGER.debug('[login] Starting lastpass login as %s', username)
-        login_hash = self.__login_hash(username, password)
         iterations = self.__get_iterations(username)
-
         login_url = '{url}/login.php'.format(url=self.connection_url)
 
         params = {
-            'method': 'web',
-            'xml': '1',
+            'method': 'mobile',
+            'web': 1,
+            'xml': 1,
             'username': username,
-            'hash': login_hash,
+            'hash': self.__login_hash(username, password, iterations),
             'iterations': iterations
         }
 
         if otp:
             params['otp'] = otp
 
+        if client_id:
+            params['imei'] = client_id
+
         response = self.__session_post(login_url, data=params)
-        response.raise_for_status()
 
-        document = ElementTree.fromstring(response.text)
-        error = document.find('error')
+        if response.status_code != 200:
+            LOGGER.debug('Non 200 response from LastPass login: %d',
+                         response.status_code)
+            raise LastPassUnknownError('Bad response from LastPass')
 
-        if error:
-            LOGGER.debug('[login] Error logging in, extracting cause')
-            cause = error.get('cause')
-
-            if cause == 'googleauthrequired':
-                raise LastPassIncorrectGoogleAuthenticatorCodeError(
-                    'MFA is required for this login')
-            else:
-                reason = error.get('message')
-                sys.exit('Could not login to lastpass: {reason}'.format(
-                    reason=reason))
-
-    def login(self, username, password):
-        """Log into LastPass with username and password.
-
-        The user will be prompted for MFA if a response from LastPass indicates
-        that MFA is required for the user.
-        """
         try:
-            self.__login(username, password)
-        except LastPassIncorrectOtpError:
-            mfa_token = six.moves.input('MFA: ')
-            self.__login(username, password, mfa_token)
+            parsed_response = ElementTree.fromstring(response.text)
+        except ElementTree.ParseError:
+            LOGGER.debug('[login] Error from ElementTree parsing XML response '
+                         'from LastPass')
+            parsed_response = None
+
+        if parsed_response is None:
+            LOGGER.debug('[login] Failed to parse response from LastPass login:'
+                         ' %s', response.text)
+            raise LastPassUnknownError('Received invalid response from '
+                                       'LastPass')
+
+        session_id = None
+
+        if parsed_response.tag == 'ok':
+            session_id = parsed_response.attrib.get('sessionid')
+
+            if isinstance(session_id, str):
+                return session_id
+
+        raise self.__parse_error(parsed_response)
 
     def get_saml_token(self, saml_cfg_id):
         """Log into LastPass and retrieve SAML token for config."""

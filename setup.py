@@ -31,7 +31,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'aws-lp=aws_lp.main:main',
+            'aws-lp=aws_lp.main:main'
         ]
     }
 )

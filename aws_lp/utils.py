@@ -21,15 +21,6 @@ def binary_type(string):
     return string.encode('utf-8')
 
 
-def xorbytes(string_a, string_b):
-    """XOR all bytes in a string"""
-    if sys.version_info[0] == 2:
-        return ''.join([chr(ord(x) ^ ord(y))
-                        for (x, y) in zip(string_a, string_b)])
-
-    return bytes([x ^ y for (x, y) in zip(string_a, string_b)])
-
-
 def get_saml_aws_roles(assertion):
     """Get the AWS roles contained in a decoded SAML assertion.
 

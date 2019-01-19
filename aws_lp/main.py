@@ -9,6 +9,8 @@ from getpass import getpass
 import click
 
 from aws_lp import __version__
+from aws_lp.exceptions import (LastPassIncorrectOtpError,
+                               LastPassCredentialsError)
 from aws_lp.lastpass import LastPass
 from aws_lp.shell import Shell
 from aws_lp.utils import (aws_assume_role, binary_type, get_saml_aws_roles,
@@ -32,8 +34,22 @@ def main(username, saml_config_id, lastpass_url, verbose):
     if verbose:
         logging.getLogger('aws_lp').setLevel(logging.DEBUG)
 
+    username = binary_type(username)
+    password = binary_type(getpass())
     lastpass_session = LastPass(lastpass_url)
-    lastpass_session.login(username, binary_type(getpass()))
+
+    try:
+        lastpass_session.login(username, password)
+    except LastPassIncorrectOtpError:
+        mfa = input('MFA: ')
+
+        try:
+            lastpass_session.login(username, password, otp=mfa)
+        except LastPassIncorrectOtpError:
+            sys.exit('Invalid MFA code')
+    except LastPassCredentialsError:
+        sys.exit('Invalid username or password')
+
     assertion = lastpass_session.get_saml_token(saml_config_id)
 
     roles = get_saml_aws_roles(base64.b64decode(assertion))
