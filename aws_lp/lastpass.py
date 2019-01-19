@@ -14,13 +14,11 @@ from xml.etree import ElementTree
 import requests
 import six
 
+from aws_lp.exceptions import (LastPassIncorrectOtpError,
+                               LastPassIncorrectGoogleAuthenticatorCodeError)
 from aws_lp.utils import binary_type, xorbytes
 
 LOGGER = logging.getLogger(__name__)
-
-
-class MfaRequiredException(Exception):
-    """Exception for required MFA when none submitted."""
 
 
 class LastPass(object):
@@ -164,7 +162,8 @@ class LastPass(object):
             cause = error.get('cause')
 
             if cause == 'googleauthrequired':
-                raise MfaRequiredException('MFA is required for this login')
+                raise LastPassIncorrectGoogleAuthenticatorCodeError(
+                    'MFA is required for this login')
             else:
                 reason = error.get('message')
                 sys.exit('Could not login to lastpass: {reason}'.format(
@@ -178,7 +177,7 @@ class LastPass(object):
         """
         try:
             self.__login(username, password)
-        except MfaRequiredException:
+        except LastPassIncorrectOtpError:
             mfa_token = six.moves.input('MFA: ')
             self.__login(username, password, mfa_token)
 
