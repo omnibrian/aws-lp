@@ -1,5 +1,6 @@
 """Shell Integration class."""
 import os
+import shutil
 import subprocess
 
 from aws_lp.utils import tempdir
@@ -20,8 +21,12 @@ class Shell(object):
 
         Currently only supports bash and zsh with a default of bash.
         """
-        # use cmd if windows
         if os.name == 'nt':
+            bash = shutil.which('bash')
+
+            if bash:
+                return subprocess.call(bash, env=self.env)
+
             return subprocess.call('cmd.exe', env=self.env)
 
         if 'zsh' in self.env.get('SHELL'):
