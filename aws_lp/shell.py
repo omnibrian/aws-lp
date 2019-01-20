@@ -20,7 +20,11 @@ class Shell(object):
 
         Currently only supports bash and zsh with a default of bash.
         """
-        if 'zsh' in self.env.get('SHELL', 'bash'):
+        # use cmd if windows
+        if os.name == 'nt':
+            return subprocess.call('cmd.exe', env=self.env)
+
+        if 'zsh' in self.env.get('SHELL'):
             return self.handoff_zsh(prompt_message)
 
         return self.handoff_bash(prompt_message)

@@ -69,9 +69,9 @@ def main(username, saml_config_id, lastpass_url, verbose):
     LOGGER.debug('Handing off to shell subprocess')
 
     try:
-        result = shell.handoff(prompt_message=role[0].split('/')[-1])
+        result = shell.handoff(prompt_message='LP:' + role[0].split('/')[-1])
     except AttributeError:
-        result = shell.handoff()
+        result = shell.handoff(prompt_message='LP')
 
     LOGGER.debug('Shell process finished with code %d', result)
 

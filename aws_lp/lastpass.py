@@ -164,7 +164,7 @@ class LastPass(object):
         response = self.__session_post(login_url, data=params)
 
         if response.status_code != 200:
-            LOGGER.debug('Non 200 response from LastPass login: %d',
+            LOGGER.debug('[login] Non 200 response from LastPass login: %d',
                          response.status_code)
             raise LastPassUnknownError('Bad response from LastPass')
 
@@ -189,6 +189,8 @@ class LastPass(object):
             if isinstance(session_id, str):
                 return session_id
 
+        LOGGER.debug('[login] No session_id returned, parsing response for '
+                     'error')
         raise self.__parse_error(parsed_response)
 
     def get_saml_token(self, saml_cfg_id):
