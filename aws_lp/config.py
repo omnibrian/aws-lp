@@ -5,7 +5,9 @@ class Config(object):
     """Configuration handler class."""
 
     def __init__(self):
+        # TODO bring in config parser
         self.config = {}
+        # TODO add section names for different profiles
 
     def set_config(self, **kwargs):
         """Update config values."""
