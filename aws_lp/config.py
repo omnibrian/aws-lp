@@ -21,8 +21,14 @@ class Config(object):
 
     def set_config(self, **kwargs):
         """Update config values."""
-        # TODO Update config file
-        # self.config.update(kwargs)
+        if self.config_section not in self.configparser.sections():
+            self.configparser.add_section(self.config_section)
+
+        for (key, value) in kwargs.items():
+            self.configparser.set(self.config_section, key, value)
+
+        with open(self.config_file, 'w') as config_file:
+            self.configparser.write(config_file)
 
     def get_config(self):
         """Return stored config."""
