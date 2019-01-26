@@ -8,14 +8,18 @@ class Config(object):
     """Configuration handler class."""
 
     def __init__(self):
-        self.config_file_name = 'aws_lp'
+        self.config_name = 'aws_lp'
         self.config_section = 'default'
 
         if os.path.isdir(os.path.expanduser('~/.config')):
-            self.config_file = os.path.expanduser(
-                '~/.config/' + self.config_file_name + '/config')
+            config_folder = os.path.expanduser('~/.config/' + self.config_name)
+
+            if not os.path.exists(config_folder):
+                os.makedirs(config_folder)
+
+            self.config_file = config_folder + '/config'
         else:
-            self.config_file = os.path.expanduser('~/.' + self.config_file_name)
+            self.config_file = os.path.expanduser('~/.' + self.config_name)
 
         self.configparser = configparser.ConfigParser()
 

@@ -9,6 +9,7 @@ from getpass import getpass
 import click
 
 from aws_lp import __version__
+from aws_lp.config import Config
 from aws_lp.exceptions import (LastPassIncorrectOtpError,
                                LastPassCredentialsError)
 from aws_lp.lastpass import LastPass
@@ -33,6 +34,10 @@ def main(username, saml_config_id, lastpass_url, verbose):
     """aws-lp cli"""
     if verbose:
         logging.getLogger('aws_lp').setLevel(logging.DEBUG)
+
+    config = Config()
+    config.set_config(username=username,
+                      saml_config_id=str(saml_config_id))
 
     username = binary_type(username)
     password = binary_type(getpass())
