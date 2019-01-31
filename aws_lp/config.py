@@ -7,9 +7,9 @@ from six.moves import configparser
 class Config(object):
     """Configuration handler class."""
 
-    def __init__(self):
+    def __init__(self, config_section='default'):
         self.config_name = 'aws_lp'
-        self.config_section = 'default'
+        self.config_section = config_section
 
         if os.path.isdir(os.path.expanduser('~/.config')):
             config_folder = os.path.expanduser('~/.config/' + self.config_name)

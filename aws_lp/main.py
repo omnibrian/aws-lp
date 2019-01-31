@@ -22,6 +22,15 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 
+@click.group(invoke_without_command=True)
+@click.pass_context
+def main(ctx):
+    """aws-lp cli"""
+    if ctx.invoked_subcommand is None:
+        click.echo('No subcommand, invoke login')
+        # ctx.invoke(login)
+
+
 @click.command(help='Assume AWS IAM Role with LastPass SAML')
 @click.argument('username')
 @click.argument('saml_config_id', type=int)
@@ -29,8 +38,8 @@ LOGGER = logging.getLogger(__name__)
               help='Proxy or debug server endpoint')
 @click.option('-v', '--verbose', is_flag=True, help='Enable debug logging')
 @click.version_option(version=__version__)
-def main(username, saml_config_id, lastpass_url, verbose):
-    """aws-lp cli"""
+def login(username, saml_config_id, lastpass_url, verbose):
+    """Log into LastPass, get SAML auth, assume role, and create subshell"""
     if verbose:
         logging.getLogger('aws_lp').setLevel(logging.DEBUG)
 
@@ -76,3 +85,10 @@ def main(username, saml_config_id, lastpass_url, verbose):
     LOGGER.debug('Shell process finished with code %d', result)
 
     sys.exit(result)
+
+
+@main.command('configure')
+@click.option('-p', '--profile', default='default',
+              help='Set a specific profile from your configuration file')
+def configure(profile):
+    click.echo('configure profile: ' + profile)
