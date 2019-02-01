@@ -114,7 +114,7 @@ class LastPass(object):
         if parsed_response.tag != 'response':
             error = None
         else:
-            parsed_response.find('error')
+            error = parsed_response.find('error')
 
         if error is None or not error.attrib:
             raise LastPassUnknownError('Unknown schema in response from '

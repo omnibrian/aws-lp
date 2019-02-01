@@ -10,8 +10,8 @@ import click
 
 from aws_lp import __version__
 from aws_lp.config import Config
-from aws_lp.exceptions import (LastPassIncorrectOtpError,
-                               LastPassCredentialsError)
+from aws_lp.exceptions import (LastPassCredentialsError, LastPassError,
+                               LastPassIncorrectOtpError)
 from aws_lp.lastpass import LastPass
 from aws_lp.shell import Shell
 from aws_lp.utils import (aws_assume_role, binary_type, get_saml_aws_roles,
@@ -37,15 +37,35 @@ def main(profile, configure, lastpass_url, verbose):
     if verbose:
         logging.getLogger('aws_lp').setLevel(logging.DEBUG)
 
+    config = Config(config_section=profile)
+
     if configure:
-        click.echo('Configuring profile: ' + profile)
-        # configure(profile)
+        username = input('LastPass Username: ')
+        click.echo('To find your SAML configuration ID for AWS you need to look'
+                   ' at the launch URL for logging in through the LastPass web '
+                   "UI. It will look similar to 'https://lastpass.com/saml/laun"
+                   "ch/cfg/25', in this example, the SAML configuration ID is "
+                   '25.')
+        saml_config_id = input('LastPass SAML configuration ID: ')
+
+        config.set_config(username=username, saml_config_id=saml_config_id)
+
+        click.echo('Profile {profile} configured'.format(profile=profile))
         sys.exit(0)
     else:
-        config = Config(config_section=profile).get_config()
+        config_values = config.get_config()
 
-        username = config.get('username')
-        saml_config_id = config.get('saml_config_id')
+        username = config_values.get('username')
+        saml_config_id = config_values.get('saml_config_id')
+
+        if not (username and saml_config_id):
+            if profile == 'default':
+                sys.exit("Please run 'aws-lp --configure' to set configuration "
+                         'before running.')
+            else:
+                sys.exit("Profile '{profile}' not configured properly, please "
+                         'execute with --configure flag to set up profile.'
+                         .format(profile=profile))
 
     username = binary_type(username)
     password = binary_type(getpass())
@@ -62,6 +82,9 @@ def main(profile, configure, lastpass_url, verbose):
             sys.exit('Invalid MFA code')
     except LastPassCredentialsError:
         sys.exit('Invalid username or password')
+    except LastPassError as error:
+        # don't display stack trace but still exit and print error message
+        sys.exit(str(error))
 
     assertion = lastpass_session.get_saml_token(saml_config_id)
 
