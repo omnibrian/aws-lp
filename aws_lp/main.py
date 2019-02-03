@@ -1,5 +1,5 @@
 """aws-lp main"""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 import base64
 import logging
