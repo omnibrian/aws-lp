@@ -4,6 +4,7 @@ from __future__ import print_function
 import base64
 import logging
 import sys
+from builtins import input
 from getpass import getpass
 
 import click

@@ -1,3 +1,3 @@
 """Package init"""
 __author__ = 'Brian LeBlanc'
-__version__ = '0.1.2'
+__version__ = '0.1.3'
