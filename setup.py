@@ -26,6 +26,7 @@ setup(
         'awscli',
         'boto3',
         'click',
+        'future',
         'requests',
         'six',
     ],

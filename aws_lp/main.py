@@ -8,6 +8,7 @@ from builtins import input
 from getpass import getpass
 
 import click
+from six.moves import configparser
 
 from aws_lp import __version__
 from aws_lp.config import Config
@@ -25,7 +26,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @click.command(help='Assume AWS IAM Role with LastPass SAML')
-@click.option('-p', '--profile', default='default',
+@click.option('-p', '--profile', default=configparser.DEFAULTSECT,
               help='Set a specific profile from your configuration file')
 @click.option('--configure', is_flag=True,
               help='Set configuration file for profile specified')
@@ -51,7 +52,7 @@ def main(profile, configure, lastpass_url, verbose):
 
         config.set_config(username=username, saml_config_id=saml_config_id)
 
-        click.echo('Profile {profile} configured'.format(profile=profile))
+        click.echo('Profile configured')
         sys.exit(0)
     else:
         config_values = config.get_config()

@@ -9,7 +9,7 @@ from six.moves import configparser
 class Config(object):
     """Configuration handler class."""
 
-    def __init__(self, config_section='default'):
+    def __init__(self, config_section=configparser.DEFAULTSECT):
         self.config_name = 'aws_lp.conf'
         self.config_section = config_section
 
@@ -23,7 +23,8 @@ class Config(object):
 
     def set_config(self, **kwargs):
         """Update config values."""
-        if self.config_section not in self.configparser.sections():
+        if (self.config_section != configparser.DEFAULTSECT
+                and self.config_section not in self.configparser.sections()):
             self.configparser.add_section(self.config_section)
 
         for (key, value) in kwargs.items():
