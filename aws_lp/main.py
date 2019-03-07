@@ -25,6 +25,22 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 
+def configure(profile):
+    """Configure LastPass profile for later use"""
+    config = Config(config_section=profile)
+
+    username = input('LastPass Username: ')
+    click.echo('To find your SAML configuration ID for AWS you need to look at '
+               'the launch URL for logging in through the LastPass web UI. It '
+               "will look similar to 'https://lastpass.com/saml/launch/cfg/25',"
+               ' in this example, the SAML configuration ID is 25.')
+    saml_config_id = input('LastPass SAML configuration ID: ')
+
+    config.set_config(username=username, saml_config_id=saml_config_id)
+
+    click.echo('Profile configured')
+
+
 @click.command(help='Assume AWS IAM Role with LastPass SAML')
 @click.option('-p', '--profile', default=configparser.DEFAULTSECT,
               help='Set a specific profile from your configuration file')
@@ -42,17 +58,7 @@ def main(profile, configure, lastpass_url, verbose):
     config = Config(config_section=profile)
 
     if configure:
-        username = input('LastPass Username: ')
-        click.echo('To find your SAML configuration ID for AWS you need to look'
-                   ' at the launch URL for logging in through the LastPass web '
-                   "UI. It will look similar to 'https://lastpass.com/saml/laun"
-                   "ch/cfg/25', in this example, the SAML configuration ID is "
-                   '25.')
-        saml_config_id = input('LastPass SAML configuration ID: ')
-
-        config.set_config(username=username, saml_config_id=saml_config_id)
-
-        click.echo('Profile configured')
+        configure(profile)
         sys.exit(0)
     else:
         config_values = config.get_config()
