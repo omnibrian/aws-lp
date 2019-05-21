@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 
 import requests
 import six
+import keyring
 
 from aws_lp.exceptions import (LastPassCredentialsError, LastPassUnknownError,
                                LastPassIncorrectYubikeyPasswordError,
@@ -22,13 +23,16 @@ LOGGER = logging.getLogger(__name__)
 class LastPass(object):
     """LastPass Session management class."""
 
-    def __init__(self, connection_url='https://lastpass.com'):
+    def __init__(self, connection_url='https://lastpass.com', username='default'):
         self.lastpass_url = 'https://lastpass.com'
         self.connection_url = connection_url
 
         self.__iterations = 5000
         self.__iterations_username = None
         self.__session = requests.Session()
+        cookies = keyring.get_password('aws-lp', str(username))
+        if cookies:
+            self.__session.cookies = requests.utils.cookiejar_from_dict(json.loads(cookies))
 
     def __should_verify(self):
         """Disable SSL validation on connections not addressed to lastpass.com.
@@ -143,6 +147,7 @@ class LastPass(object):
         raised.
         """
         LOGGER.debug('[login] Starting lastpass login as %s', username)
+
         iterations = self.__get_iterations(username)
         login_url = '{url}/login.php'.format(url=self.connection_url)
 
@@ -187,13 +192,14 @@ class LastPass(object):
             session_id = parsed_response.attrib.get('sessionid')
 
             if isinstance(session_id, str):
+                keyring.set_password('aws-lp', str(username), json.dumps(requests.utils.dict_from_cookiejar(self.__session.cookies)))
                 return session_id
 
         LOGGER.debug('[login] No session_id returned, parsing response for '
                      'error')
         raise self.__parse_error(parsed_response)
 
-    def get_saml_token(self, saml_cfg_id):
+    def get_saml_token(self, saml_cfg_id, require_saml_response=True):
         """Log into LastPass and retrieve SAML token for config."""
         LOGGER.debug('[get_saml_token] Starting SAML token retrieval')
 
@@ -223,6 +229,9 @@ class LastPass(object):
 
         if not form['fields'].get('SAMLResponse'):
             LOGGER.debug('[get_saml_token] Form: %s', json.dumps(form))
-            sys.exit('No SAML response from LastPass')
+            if require_saml_response:
+                sys.exit('No SAML response from LastPass')
+            else:
+                return None
 
         return form['fields']['SAMLResponse']

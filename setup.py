@@ -27,6 +27,7 @@ setup(
         'boto3',
         'click',
         'future',
+        'keyring',
         'requests',
         'six',
     ],
