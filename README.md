@@ -1,8 +1,16 @@
-# aws-lp
+# aws-lp: AWS LastPass CLI
 
 [![PyPI version](https://badge.fury.io/py/aws-lp.svg)](https://badge.fury.io/py/aws-lp)
 
 Tool for using AWS CLI with LastPass SAML.
+
+## Installation
+
+This tool is published on pypi.org:
+
+```
+pip install aws-lp
+```
 
 ## Usage
 
