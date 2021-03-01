@@ -33,8 +33,9 @@ LOGGER = logging.getLogger(__name__)
 @click.option('--lastpass-url', default='https://lastpass.com',
               help='Proxy or debug server endpoint')
 @click.option('-v', '--verbose', is_flag=True, help='Enable debug logging')
+@click.argument('cmd', nargs=-1, type=click.UNPROCESSED)
 @click.version_option(version=__version__)
-def main(profile, configure, lastpass_url, verbose):
+def main(profile, configure, lastpass_url, verbose, cmd=None):
     """Log into LastPass, get SAML auth, assume role, and create subshell"""
     if verbose:
         logging.getLogger('aws_lp').setLevel(logging.DEBUG)
@@ -107,9 +108,9 @@ def main(profile, configure, lastpass_url, verbose):
     LOGGER.debug('Handing off to shell subprocess')
 
     try:
-        result = shell.handoff(prompt_message='LP:' + role[0].split('/')[-1])
+        result = shell.handoff(prompt_message='LP:' + role[0].split('/')[-1], command=cmd)
     except AttributeError:
-        result = shell.handoff(prompt_message='LP')
+        result = shell.handoff(prompt_message='LP', command=cmd)
 
     LOGGER.debug('Shell process finished with code %d', result)
 

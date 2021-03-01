@@ -18,11 +18,14 @@ class Shell(object):
         """Update environment with new or updated variables."""
         self.env.update(kwargs)
 
-    def handoff(self, prompt_message=''):
+    def handoff(self, prompt_message='', command=None):
         """Handoff to shell process with defined environment.
 
         Currently only supports bash and zsh with a default of bash.
         """
+        if command:
+            return subprocess.call(command, env=self.env)
+
         if os.name == 'nt':
             bash = shutil.which('bash')
 
