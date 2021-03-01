@@ -70,25 +70,27 @@ def main(profile, configure, lastpass_url, verbose):
                          .format(profile=profile))
 
     username = binary_type(username)
-    password = binary_type(getpass())
-    lastpass_session = LastPass(lastpass_url)
+    lastpass_session = LastPass(lastpass_url, str(username))
+    assertion = lastpass_session.get_saml_token(saml_config_id, require_saml_response=False)
 
-    try:
-        lastpass_session.login(username, password)
-    except LastPassIncorrectOtpError:
-        mfa = input('MFA: ')
+    if assertion == None:
+      password = binary_type(getpass())
+      try:
+          lastpass_session.login(username, password)
+      except LastPassIncorrectOtpError:
+          mfa = input('MFA: ')
 
-        try:
-            lastpass_session.login(username, password, otp=mfa)
-        except LastPassIncorrectOtpError:
-            sys.exit('Invalid MFA code')
-    except LastPassCredentialsError:
-        sys.exit('Invalid username or password')
-    except LastPassError as error:
-        # don't display stack trace but still exit and print error message
-        sys.exit(str(error))
+          try:
+              lastpass_session.login(username, password, otp=mfa)
+          except LastPassIncorrectOtpError:
+              sys.exit('Invalid MFA code')
+      except LastPassCredentialsError:
+          sys.exit('Invalid username or password')
+      except LastPassError as error:
+          # don't display stack trace but still exit and print error message
+          sys.exit(str(error))
 
-    assertion = lastpass_session.get_saml_token(saml_config_id)
+      assertion = lastpass_session.get_saml_token(saml_config_id)
 
     roles = get_saml_aws_roles(base64.b64decode(assertion))
     role = prompt_for_role(roles)
